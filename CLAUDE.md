@@ -123,13 +123,16 @@ dotnet test src/OmenCoreApp.Tests/OmenCoreApp.Tests.csproj --filter "FullyQualif
 - Reply tone on GitHub: friendly, concrete, transparent about uncertainty; ask for the specific
   artefact you need (diagnostics export, HardwareWorker.log, Guided Fan Verification export).
 
-## Open threads (as of 2026-09-26 — verify on GitHub before acting)
+## Open threads (as of 2026-09-27 — verify on GitHub before acting)
 
+- Field confirmation wanted: see "Needs Field Confirmation" in `docs/CHANGELOG_v4.4.1.md`.
 - #211: quiet exits / NVML crash (awaiting HardwareWorker.log); fans-stay-high (awaiting exports).
-- #212: single-zone RGB byte-0 fix awaiting reporter test build.
-- #213: awaiting diagnostics export. PR #210: awaiting evidence for 8DD0 changes.
+- #213: occasional high temps at low load (awaiting export). PR #210: awaiting evidence for 8DD0.
 - #149, #155, #184, #207: awaiting Guided Fan Verification exports. 8C58 curves off pending evidence.
-- #115, #172: close when 4.4.1 ships.
+- Discord GHOST (8BA9): keyboard colour not changing — needs an export after a colour apply.
+- Close on 4.4.1 ship: #115, #172, #214, #215.
+- Primax per-key: next step is an owner test, then an index map from our own source (Ohman is
+  GPL-3 — use its documented facts only, never its code or key maps).
 
 ## Constraints
 

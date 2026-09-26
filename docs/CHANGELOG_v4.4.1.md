@@ -2,12 +2,14 @@
 
 **Release Date:** TBD — in progress. Rolling changelog, updated as work lands.
 **Release Status:** In progress. Started 2026-09-25, one day after v4.4.0 shipped.
-**Type:** Field-report follow-up to 4.4.0. Six fixes (watchdog failsafe, fan-verification Max
-fallback, Victus GPU Power Boost display, diagnostic keepalive guard, startup mode label, Linux
-CPU sensor selection), three new board entries (`8BBE`,
-`88F8`, `88F7`), one RGB fix awaiting hardware confirmation (`#212`), and
-experimental per-key colour for 2021-2024 OMEN 16/17 Primax keyboards. Sources: post-release diagnostics
-exports, a community fork, PR `#210`, and a sweep of older unanswered issues.
+**Type:** Field-report follow-up to 4.4.0. Eleven fixes across fan control (watchdog failsafe,
+fan-verification Max fallback, diagnostic keepalive guard), RGB (Dynamic Lighting detection,
+keyboard backend fallback), UI (Victus GPU Power Boost display, startup mode label), the RAM
+optimizer (working-set trim, double clean), the system cleaner (vendor silent uninstall) and Linux
+(CPU sensor selection); three new board entries (`8BBE`, `88F8`, `88F7`) plus a keyboard entry for
+`8BA9`; experimental per-key colour for 2021-2024 OMEN 16/17 Primax keyboards; and one RGB fix
+awaiting hardware confirmation (`#212`). Sources: post-release diagnostics exports, GitHub issues,
+Discord, a community fork, PR `#210`, and the Ohman project's published research.
 **Base Version:** v4.4.0
 **Tracking doc:** `docs/ROADMAP_v4.4.1.md` — full investigation detail, evidence trails, and what's
 still open live there; this file stays short.
@@ -91,6 +93,13 @@ even though the firmware reports them written. The Lighting page now shows a ban
 to the Windows setting when this is the case (read-only; OmenCore never changes the setting), and
 diagnostics exports record it. Previously only detected for OMEN MAX per-key keyboards.
 
+### Keyboard Backend Fallback When Model Detection Returns Nothing
+
+Minor: if keyboard model detection returned no config at all (a non-OMEN/Victus identity or a
+detection error), a failed colour apply had no fallback backend to try, because a null-conditional
+type check evaluated to false. Unrecognised OMEN/Victus boards were never affected; they get a
+default four-zone config.
+
 ---
 
 ## Added
@@ -169,19 +178,27 @@ removes colour control entirely instead of correcting it. See the roadmap for th
 if the `WmiBiosBackend` byte-0 fix doesn't resolve `#212` on real hardware, the real single-zone
 `ColorTable` layout is still unknown. See the roadmap for what's needed either way.
 
-### Keyboard Backend Fallback When Model Detection Returns Nothing
-
-Minor: if keyboard model detection returned no config at all (a non-OMEN/Victus identity or a
-detection error), a failed colour apply had no fallback backend to try, because a null-conditional
-type check evaluated to false. Unrecognised OMEN/Victus boards were never affected; they get a
-default four-zone config.
-
 ---
 
 ## Issue Housekeeping
 
 Closed during this cycle as already resolved in 4.4.0 or duplicated elsewhere: `#170` (`8A3E`
 already in the database), `#188` (`8D26` entry shipped), `#174` (duplicate of `#199`), `#156`
-(duplicate of `#149`). `#115` and `#172` close when this release ships.
+(duplicate of `#149`). Close when this release ships: `#115` and `#172` (8BBE misidentification),
+`#214` (Linux CPU sensor), `#215` (88F7 entry). `#199` stays open for `8BA9` verification.
+
+---
+
+## Needs Field Confirmation
+
+Shipped on evidence but not yet seen working on the affected hardware. Each is safe to be wrong
+about (no change in behaviour on boards it doesn't apply to), but reports are wanted:
+
+- `#212` single-zone keyboard colour (byte-0 zone count) — board `8BD4`.
+- Primax per-key uniform colour — any 2021-2024 per-key OMEN 16/17.
+- Windows Dynamic Lighting banner on four-zone keyboards — detection relies on the documented
+  virtual-device id `0461:0000`; if Windows names it differently the banner simply won't show.
+- Guided Fan Verification 100% fallback — `88F8` (`#207`), `88F7` (`#215`).
+- Linux CPU sensor ranking — `8BCA` (`#214`).
 
 ---
