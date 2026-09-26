@@ -185,6 +185,16 @@ Asked for an export captured while the symptom is happening. **Update 2026-09-26
 it cleared after a restart; now asking about occasional high temps at low load — needs an export
 taken while it's happening (likely background load or BIOS fan policy, nothing to trace yet).
 
+### Primax per-key keyboards (added 2026-09-27) — needs an owner to confirm
+
+`PrimaxKeyboardMcu` + `PrimaxPerKeyBackend`: uniform static colour on `0461:4E9A`/`4E9B`, probed
+first when `GetKeyboardLightingType()` returns `RgbPerKey`, and also inside the `HidPerKey` probe for
+unrecognised boards. Protocol facts from Ohman's docs/research.md §7b (GPL-3 project; facts only,
+no code), frame format shared with our own `DojoKeyboardMcu`. Command whitelist enforced in code.
+Takes OGH's named mutex per map write (name as documented; untested whether OGH uses the
+`Global\` namespace). **Next:** a per-key OMEN 16/17 owner to confirm the keyboard lights; then a
+key index map (our own source, not Ohman's) to place four-zone colours and per-key pictures.
+
 ### Carried forward from v4.4.0, unchanged
 
 - Board `8E35` Performance mode (`#195`) — WMI policy fallback confirmed to fire correctly during a

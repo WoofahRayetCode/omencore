@@ -5,7 +5,8 @@
 **Type:** Field-report follow-up to 4.4.0. Six fixes (watchdog failsafe, fan-verification Max
 fallback, Victus GPU Power Boost display, diagnostic keepalive guard, startup mode label, Linux
 CPU sensor selection), three new board entries (`8BBE`,
-`88F8`, `88F7`), and one RGB fix awaiting hardware confirmation (`#212`). Sources: post-release diagnostics
+`88F8`, `88F7`), one RGB fix awaiting hardware confirmation (`#212`), and
+experimental per-key colour for 2021-2024 OMEN 16/17 Primax keyboards. Sources: post-release diagnostics
 exports, a community fork, PR `#210`, and a sweep of older unanswered issues.
 **Base Version:** v4.4.0
 **Tracking doc:** `docs/ROADMAP_v4.4.1.md` — full investigation detail, evidence trails, and what's
@@ -79,6 +80,25 @@ WMI fan control and V1 policy confirmed live in a real diagnostics export.
 [#207](https://github.com/theantipopau/omencore/issues/207): was Family fallback, which also cut the
 firmware's two fans down to one. Flags from the reporter's 4.4.0 export: WMI level writes verified at
 30%/60%, two fans, backlight-only keyboard. Curves, GPU boost and undervolt left off pending evidence.
+
+### Per-Key Keyboards on 2021-2024 OMEN 16/17: Uniform Colour via the Keyboard's Own MCU — Experimental
+
+On these boards the BIOS reports a per-key keyboard and keeps accepting the four-zone colour
+commands, but nothing written there reaches the keys, so colour changes silently did nothing. The
+keyboard is a Primax USB MCU (`0461:4E9A` on OMEN 17, `0461:4E9B` on OMEN 16). OmenCore now probes
+it first whenever firmware reports per-key, and sets one colour across the whole keyboard through
+the MCU's static colour map, the same frame format our OMEN MAX (Darfon) support already speaks.
+Boards OMEN Gaming Hub routes this way include `88F7`/`88FE`/`8A17`–`8A1A`/`8BAD`/`8BB0` (OMEN 17)
+and `88F4`–`88F6`/`88FD`/`8A13`–`8A16` (OMEN 16), when the SKU has the per-key keyboard.
+
+- **Uniform colour only.** Per-zone colours aren't mapped onto these keys yet; zone 1's colour is
+  applied to every key. Effects other than static and off aren't supported on this path.
+- **Guarded.** Only device-info reads, lighting on/off and the three colour pages can be sent; the
+  flash-store (`0x0A`) and restore / firmware-update (`0x10`) commands are refused in code. Nothing is
+  written to flash, and the keyboard must answer a device-info handshake before anything else is sent.
+- **Not yet confirmed on hardware by OmenCore.** The Primax-specific facts come from the
+  [Ohman](https://github.com/P4R1H/ohman) project's published research (confirmed there on board
+  `8BAD`), used as documentation only; no Ohman code was copied.
 
 ### Board `88F7` (OMEN 17-ck0xxx, Intel) Given Exact Capability and Keyboard Entries
 

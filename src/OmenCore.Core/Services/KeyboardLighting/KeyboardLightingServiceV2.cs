@@ -129,6 +129,28 @@ namespace OmenCore.Services.KeyboardLighting
             // Try to get model-specific configuration
             _modelConfig = DetectModelConfig();
             result.ModelConfig = _modelConfig;
+
+            // Per-key boards whose keyboard is a Primax MCU (2021-2024 OMEN 16/17 per-key): the
+            // firmware reports a per-key keyboard and still accepts the four-zone ColorTable
+            // writes, but they never reach the keys, so a "successful" ColorTable backend would
+            // win detection and do nothing. When firmware says per-key, try the MCU first. The
+            // backend declines cleanly when no Primax keyboard is present.
+            if (ShouldProbePrimaxFirst(_wmiBios?.GetKeyboardLightingType()))
+            {
+                result.TriedMethods.Add("HidPerKey (Primax)");
+                var primax = new PrimaxPerKeyBackend(_logging);
+                if (await primax.InitializeAsync() && primax.IsAvailable)
+                {
+                    _activeBackend = primax;
+                    result.WorkingMethod = KeyboardMethod.HidPerKey;
+                    result.WorkingBackend = primax;
+                    result.StatusMessage = $"Using {primax.Name}";
+                    _logging.Info($"[KeyboardLightingV2] ✓ Backend initialized: {primax.Name}");
+                    _lastProbeResult = result;
+                    return result;
+                }
+                primax.Dispose();
+            }
             
             if (_modelConfig != null)
             {
@@ -485,6 +507,14 @@ namespace OmenCore.Services.KeyboardLighting
                         }
 
                         dojo.Dispose();
+
+                        var primaxBackend = new PrimaxPerKeyBackend(_logging);
+                        if (await primaxBackend.InitializeAsync() && primaxBackend.IsAvailable)
+                        {
+                            return primaxBackend;
+                        }
+
+                        primaxBackend.Dispose();
                         backend = new HidPerKeyBackend(_logging);
                         break;
                         
@@ -805,6 +835,13 @@ namespace OmenCore.Services.KeyboardLighting
             _logging.Warn($"[KeyboardLightingV2] {operationName} failed on active backend {activeBackend.Name}");
             return activeResult;
         }
+
+        /// <summary>
+        /// Only a firmware answer of per-key RGB sends detection to the Primax MCU first; four-zone
+        /// and single-zone boards keep their normal order, and no answer changes nothing.
+        /// </summary>
+        internal static bool ShouldProbePrimaxFirst(HpWmiBios.KeyboardLightingType? firmwareLighting) =>
+            firmwareLighting == HpWmiBios.KeyboardLightingType.RgbPerKey;
 
         private IEnumerable<KeyboardMethod> GetFallbackMethods(KeyboardMethod currentMethod)
             => ResolveFallbackMethods(_modelConfig, currentMethod);
