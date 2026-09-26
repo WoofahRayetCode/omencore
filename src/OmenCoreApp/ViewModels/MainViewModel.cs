@@ -4482,6 +4482,11 @@ namespace OmenCore.ViewModels
 
         public void Dispose()
         {
+            // First, while the NVAPI and undervolt services are still alive: an overclock or
+            // undervolt still in its Test Apply window was never kept and must not outlive the app.
+            try { _systemControl?.RevertPendingTuningTestsForShutdown(); }
+            catch (Exception ex) { _logging.Warn($"Reverting pending tuning tests on exit failed: {ex.Message}"); }
+
             _trayActionDispatcher.Dispose();
             _hotkeyCoordinator.Dispose();
 

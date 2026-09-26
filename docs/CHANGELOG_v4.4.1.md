@@ -2,10 +2,11 @@
 
 **Release Date:** TBD — in progress. Rolling changelog, updated as work lands.
 **Release Status:** In progress. Started 2026-09-25, one day after v4.4.0 shipped.
-**Type:** Field-report follow-up to 4.4.0. Eleven fixes across fan control (watchdog failsafe,
+**Type:** Field-report follow-up to 4.4.0. The first release delivered by the fixed in-app
+updater. Twelve fixes across fan control (watchdog failsafe,
 fan-verification Max fallback, diagnostic keepalive guard), RGB (Dynamic Lighting detection,
 keyboard backend fallback), UI (Victus GPU Power Boost display, startup mode label), the RAM
-optimizer (working-set trim, double clean), the system cleaner (vendor silent uninstall) and Linux
+optimizer (working-set trim, double clean), tuning (revert pending tests on exit), the system cleaner (vendor silent uninstall) and Linux
 (CPU sensor selection); three new board entries (`8BBE`, `88F8`, `88F7`) plus a keyboard entry for
 `8BA9`; experimental per-key colour for 2021-2024 OMEN 16/17 Primax keyboards; and one RGB fix
 awaiting hardware confirmation (`#212`). Sources: post-release diagnostics exports, GitHub issues,
@@ -16,7 +17,31 @@ still open live there; this file stays short.
 
 ---
 
+**Updating to 4.4.1:** from the republished 4.4.0, use the in-app updater (the update button in the header, or F5);
+this is the first release it can install end to end. From 4.3.1 or earlier, or from a 4.4.0
+installed before the same-day republish, download the installer from the release page once;
+settings are kept.
+
+---
+
 ## Fixed
+
+### In-App Updater Fixed (Shipped in the 4.4.0 Republish, First Exercised by This Release)
+
+Reported the day 4.4.0 shipped: in-app updates from 4.3.1 downloaded, passed the hash check, then
+failed with "Downloaded file is not a valid Windows executable". Three causes, all fixed in the
+same-day 4.4.0 republish and carried into 4.4.1:
+
+- The updater read the self-extraction temp folder as its install location, so installed copies
+  looked portable. It now uses the running exe's own folder.
+- It looked for the `OmenCore` uninstall key, but Inno Setup registers `{AppId}_is1`; both are
+  now checked, in both registry views and hives.
+- Portable builds took the last `.zip` in the release, which could be the Linux package. Asset
+  selection is now a tested function: Setup exe for installed builds, Windows zip for portable.
+
+A portable download now ends with "close OmenCore and extract this" and opens its folder instead of
+a false "corrupted" error, and the About window no longer sticks on "Installing update..." after a
+failed install. Listed here because 4.4.1 is the first update the fixed updater delivers.
 
 ### Watchdog Failsafe Could Release Onto a Still-Hot Machine, and Never Re-Applied Itself
 
@@ -93,6 +118,14 @@ even though the firmware reports them written. The Lighting page now shows a ban
 to the Windows setting when this is the case (read-only; OmenCore never changes the setting), and
 diagnostics exports record it. Previously only detected for OMEN MAX per-key keyboards.
 
+### Closing OmenCore During a Tuning Test Left the Untested Overclock or Undervolt Applied
+
+GPU overclocking and CPU undervolting both offer Test Apply: the change runs for 30 seconds and
+reverts unless you press Keep. If OmenCore was closed inside that window, nothing reverted it; the
+untested values weren't saved, but NVAPI offsets and undervolt writes stayed live until a reboot
+or driver reset. Exit now reverts any pending test first, while the GPU and undervolt services
+are still running.
+
 ### Keyboard Backend Fallback When Model Detection Returns Nothing
 
 Minor: if keyboard model detection returned no config at all (a non-OMEN/Victus identity or a
@@ -167,6 +200,12 @@ evidence for. `EcDirectBackend` untouched (different, older-generation mechanism
 count byte). **Not yet confirmed on real hardware.** The flag that looked like a quick fix
 (`HasFourZoneRgb`) still doesn't control zone count at all and was left at `true`; flipping it
 removes colour control entirely instead of correcting it. See the roadmap for the full write-up.
+
+### Ctrl+1…9 Jumps Between Pages
+
+Keyboard navigation for the page rail: Ctrl+1 through Ctrl+9 opens the Nth page as it appears on
+screen, counting only visible pages, so the numbers stay right when advanced pages are hidden.
+Ignored while typing in a text field.
 
 ---
 

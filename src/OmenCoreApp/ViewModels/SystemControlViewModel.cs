@@ -2097,6 +2097,44 @@ namespace OmenCore.ViewModels
             _logging.Info("GPU OC test apply confirmed by user");
         }
 
+        /// <summary>
+        /// Called on app exit. A GPU overclock or CPU undervolt still in its 30-second Test Apply
+        /// window has not been kept, so it must not outlive the app: NVAPI offsets and undervolt
+        /// writes stay live until reboot or driver reset. Reverts both synchronously (the normal
+        /// undervolt revert is fire-and-forget, which would race the service's disposal).
+        /// </summary>
+        public void RevertPendingTuningTestsForShutdown()
+        {
+            if (IsGpuOcTestPending)
+            {
+                _gpuOcTestCancellation?.Cancel();
+                try { RevertGpuOcTest("OmenCore closed during the GPU test; previous tuning restored."); }
+                catch (Exception ex) { _logging.Warn($"GPU OC test revert on exit failed: {ex.Message}"); }
+            }
+
+            if (IsCpuUndervoltTestPending && _cpuUndervoltTestSnapshot is { } snapshot)
+            {
+                _cpuUndervoltTestCancellation?.Cancel();
+                _cpuUndervoltTestCancellation?.Dispose();
+                _cpuUndervoltTestCancellation = null;
+                _cpuUndervoltTestSnapshot = null;
+                IsCpuUndervoltTestPending = false;
+                SetUndervoltTestPendingFlag(false);
+                try
+                {
+                    var revert = new UndervoltOffset { CoreMv = snapshot.CoreMv, CacheMv = snapshot.CacheMv };
+                    if (_undervoltService.ApplyAsync(revert).Wait(TimeSpan.FromSeconds(3)))
+                        _logging.Info($"CPU undervolt test reverted on exit: Core={snapshot.CoreMv} mV, Cache={snapshot.CacheMv} mV");
+                    else
+                        _logging.Warn("CPU undervolt test revert on exit timed out");
+                }
+                catch (Exception ex)
+                {
+                    _logging.Warn($"CPU undervolt test revert on exit failed: {ex.Message}");
+                }
+            }
+        }
+
         private void RevertGpuOcTest(string statusText)
         {
             var snapshot = _gpuOcTestSnapshot;

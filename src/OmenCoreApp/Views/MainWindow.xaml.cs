@@ -40,6 +40,7 @@ namespace OmenCore.Views
             TabControlMain.SelectionChanged += TabControlMain_SelectionChanged;
             TabControlMain.SizeChanged += TabControlMain_SizeChanged;
             SystemParameters.StaticPropertyChanged += SystemParametersOnStaticPropertyChanged;
+            PreviewKeyDown += MainWindow_PreviewKeyDown;
             
             // Apply Stay on Top setting from config
             Topmost = App.Configuration.Config.StayOnTop;
@@ -51,6 +52,47 @@ namespace OmenCore.Views
             }
         }
         
+        /// <summary>
+        /// Ctrl+1..9 jumps to the Nth page in the navigation rail. Counts visible pages only, so
+        /// the numbers match what's on screen whether or not advanced pages are hidden. Leaves
+        /// text boxes alone so Ctrl+digit still types where a field has focus.
+        /// </summary>
+        private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers != ModifierKeys.Control || e.OriginalSource is TextBox) return;
+
+            int number = e.Key switch
+            {
+                >= Key.D1 and <= Key.D9 => e.Key - Key.D1 + 1,
+                >= Key.NumPad1 and <= Key.NumPad9 => e.Key - Key.NumPad1 + 1,
+                _ => 0
+            };
+            if (number == 0) return;
+
+            var visibility = new List<bool>();
+            foreach (var item in TabControlMain.Items)
+                visibility.Add(item is UIElement element && element.Visibility == Visibility.Visible);
+
+            int index = ResolveNavShortcutIndex(visibility, number);
+            if (index >= 0)
+            {
+                TabControlMain.SelectedIndex = index;
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>Tab index for the Nth visible page (1-based), or -1 if there are fewer.</summary>
+        internal static int ResolveNavShortcutIndex(IReadOnlyList<bool> tabVisibility, int number)
+        {
+            int seen = 0;
+            for (int i = 0; i < tabVisibility.Count; i++)
+            {
+                if (!tabVisibility[i]) continue;
+                if (++seen == number) return i;
+            }
+            return -1;
+        }
+
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(MainViewModel.LogBuffer))
