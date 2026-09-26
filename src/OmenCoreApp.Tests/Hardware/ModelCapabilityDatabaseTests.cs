@@ -663,6 +663,24 @@ namespace OmenCoreApp.Tests.Hardware
         }
 
         [Fact]
+        public void GetCapabilities_88F7_ResolvesExactly_WithVerifiedLevelWritesAndMuxOff()
+        {
+            // GitHub #215: was Family fallback. Level writes verified at 30/60% -> curves on;
+            // MUX reported by WMI but never exercised -> stays off.
+            var caps = ModelCapabilityDatabase.GetCapabilities("88F7");
+
+            caps.ProductId.Should().Be("88F7");
+            caps.Family.Should().Be(OmenModelFamily.OMEN17);
+            caps.FanZoneCount.Should().Be(2);
+            caps.MaxFanLevel.Should().Be(55);
+            caps.SupportsFanCurves.Should().BeTrue();
+            caps.SupportsFanControlEc.Should().BeFalse();
+            caps.HasFourZoneRgb.Should().BeTrue();
+            caps.HasMuxSwitch.Should().BeFalse();
+            caps.UserVerified.Should().BeFalse();
+        }
+
+        [Fact]
         public void GetCapabilities_8BBE_ResolvesExactly_NoLongerFamilyFallback()
         {
             // GitHub #211: this board was Family fallback only (IsKnownModel: no) until its own

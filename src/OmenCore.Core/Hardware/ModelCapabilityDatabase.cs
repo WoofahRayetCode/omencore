@@ -1408,6 +1408,37 @@ namespace OmenCore.Hardware
                 Notes = "8BB1 is shared with Victus 15-fa1xxx; OMEN 17 profile selected when model name lacks 15-fa1 substring"
             });
 
+            // OMEN 17-ck0xxx (2021 Intel) — ProductId 88F7, GitHub #215 4.4.0 export (17-ck0323nw,
+            // RTX 3060, BIOS F.51). Was family fallback. Live probe: WMI V1 thermal policy, 2 fans,
+            // classic 55-level range; Guided Fan Verification level writes verified at 30%/60% on
+            // both fans (the 100% miss is the SetFanMax-ignored pattern fixed in 4.4.1).
+            // Firmware keyboard topology FourZoneWithoutNumpad; reporter confirms per-zone RGB
+            // works. WMI reports a MUX switch, but it was never exercised - left off pending
+            // confirmation, as are GPU boost (runtime detection still governs display) and undervolt
+            // (Secure Boot blocked MSR in the export).
+            AddModel(new ModelCapabilities
+            {
+                ProductId = "88F7",
+                ModelName = "OMEN 17-ck0xxx (2021) Intel",
+                ModelNamePattern = "17-ck0",
+                ModelYear = 2021,
+                Family = OmenModelFamily.OMEN17,
+                SupportsFanControlWmi = true,
+                SupportsFanControlEc = false,
+                SupportsFanCurves = true,
+                SupportsIndependentFanCurves = false,
+                SupportsRpmReadback = false,
+                FanZoneCount = 2,
+                MaxFanLevel = 55,
+                HasMuxSwitch = false,
+                SupportsGpuPowerBoost = false,
+                SupportsUndervolt = false,
+                HasFourZoneRgb = true,
+                HasKeyboardBacklight = true,
+                UserVerified = false,
+                Notes = "GitHub #215 - OMEN 17-ck0323nw, ProductId 88F7, RTX 3060, BIOS F.51. WMI V1, 2 fans, 55 levels; level writes verified at 30%/60% by Guided Fan Verification. FourZoneWithoutNumpad keyboard, per-zone RGB confirmed by reporter. MUX (WMI reports available), GPU boost and undervolt unexercised."
+            });
+
             // OMEN 17-ck1xxx (2022) — GitHub #134/#144 field diagnostics.
             // WMI V1 fan levels are command/readback levels, not independent physical RPM.
             // Keep direct EC and independent curves disabled until board-safe registers are verified.

@@ -4,8 +4,8 @@
 **Release Status:** In progress. Started 2026-09-25, one day after v4.4.0 shipped.
 **Type:** Field-report follow-up to 4.4.0. Six fixes (watchdog failsafe, fan-verification Max
 fallback, Victus GPU Power Boost display, diagnostic keepalive guard, startup mode label, Linux
-CPU sensor selection), two new board entries (`8BBE`,
-`88F8`), and one RGB fix awaiting hardware confirmation (`#212`). Sources: post-release diagnostics
+CPU sensor selection), three new board entries (`8BBE`,
+`88F8`, `88F7`), and one RGB fix awaiting hardware confirmation (`#212`). Sources: post-release diagnostics
 exports, a community fork, PR `#210`, and a sweep of older unanswered issues.
 **Base Version:** v4.4.0
 **Tracking doc:** `docs/ROADMAP_v4.4.1.md` — full investigation detail, evidence trails, and what's
@@ -80,6 +80,20 @@ WMI fan control and V1 policy confirmed live in a real diagnostics export.
 firmware's two fans down to one. Flags from the reporter's 4.4.0 export: WMI level writes verified at
 30%/60%, two fans, backlight-only keyboard. Curves, GPU boost and undervolt left off pending evidence.
 
+### Board `88F7` (OMEN 17-ck0xxx, Intel) Given Exact Capability and Keyboard Entries
+
+[#215](https://github.com/theantipopau/omencore/issues/215): was Family fallback, which also hid the
+keyboard model. From the reporter's 4.4.0 export: WMI V1, two fans, 55 levels, level writes verified
+at 30%/60% (curves enabled), four-zone keyboard with per-zone RGB confirmed working. The 100% miss
+in their fan test is the "accepts Max, ignores it" issue already fixed above. MUX, GPU boost and
+undervolt left off pending evidence.
+
+### Board `8BA9` (OMEN 16-wd0xxx) Given a Keyboard Entry
+
+Resolved as "Keyboard: Unknown" despite having a capability entry. Identity-only: it now names the
+same ColorTable four-zone path the default config already used. A Discord report says lighting still
+doesn't change colour on this board; that is **not** fixed here and needs a log from an apply attempt.
+
 ### Victus 16-r0xxx Intel No Longer Misidentified as the Ryzen Board
 
 [#115](https://github.com/theantipopau/omencore/issues/115),
@@ -109,6 +123,13 @@ removes colour control entirely instead of correcting it. See the roadmap for th
 `EcDirectBackend.ZoneCount` still hardcodes `4` — deliberately left alone this pass, see above. And
 if the `WmiBiosBackend` byte-0 fix doesn't resolve `#212` on real hardware, the real single-zone
 `ColorTable` layout is still unknown. See the roadmap for what's needed either way.
+
+### Keyboard Backend Fallback When Model Detection Returns Nothing
+
+Minor: if keyboard model detection returned no config at all (a non-OMEN/Victus identity or a
+detection error), a failed colour apply had no fallback backend to try, because a null-conditional
+type check evaluated to false. Unrecognised OMEN/Victus boards were never affected; they get a
+default four-zone config.
 
 ---
 

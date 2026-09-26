@@ -176,6 +176,21 @@ namespace OmenCore.Services.KeyboardLighting
                 ModelYear = 2021
             });
             
+            // OMEN 17-ck0xxx (2021 Intel) — GitHub #215: firmware topology FourZoneWithoutNumpad,
+            // ColorTable backend initialized, reporter confirms per-zone colour works.
+            AddModel(new KeyboardModelConfig
+            {
+                ProductId = "88F7",
+                ModelName = "OMEN 17-ck0xxx (2021) Intel",
+                ModelNamePattern = "17-ck0",
+                KeyboardType = KeyboardType.FourZone,
+                PreferredMethod = KeyboardMethod.ColorTable2020,
+                FallbackMethods = new[] { KeyboardMethod.NewWmi2023, KeyboardMethod.EcDirect },
+                ModelYear = 2021,
+                UserVerified = false,
+                Notes = "GitHub #215 - ProductId 88F7 / 17-ck0323nw. ColorTable per-zone RGB confirmed working by reporter on 4.4.0."
+            });
+
             AddModel(new KeyboardModelConfig
             {
                 ProductId = "8BAE",
@@ -289,6 +304,24 @@ namespace OmenCore.Services.KeyboardLighting
                 FallbackMethods = new[] { KeyboardMethod.NewWmi2023, KeyboardMethod.EcDirect },
                 ModelYear = 2024,
                 Notes = "Ryzen 7 7840HS - user reported AC detection issues"
+            });
+
+            // OMEN 16-wd0xxx (2023 Intel) — ProductId 8BA9. Discord GHOST 2026-09-02 bundle: the
+            // firmware's own topology probe reported FourZoneWithoutNumpad, and the V2 service
+            // initialized WMI BIOS ColorTable (GitHub #199 export). Had no entry, so it resolved
+            // as "Keyboard: Unknown". Same interface as the wf1 siblings (8C76). Colour change
+            // itself not yet confirmed - Discord 2026-09-27 reports lighting still not working.
+            AddModel(new KeyboardModelConfig
+            {
+                ProductId = "8BA9",
+                ModelName = "OMEN 16-wd0xxx (2023) Intel",
+                ModelNamePattern = "16-wd0",
+                KeyboardType = KeyboardType.FourZone,
+                PreferredMethod = KeyboardMethod.ColorTable2020,
+                FallbackMethods = new[] { KeyboardMethod.NewWmi2023, KeyboardMethod.EcDirect },
+                ModelYear = 2023,
+                UserVerified = false,
+                Notes = "Discord GHOST / GitHub #199 - ProductId 8BA9, i7-13620H + RTX 4060. Firmware topology FourZoneWithoutNumpad; ColorTable backend initializes. Colour change unconfirmed (Discord 2026-09-27: still not working)."
             });
 
             // OMEN 16-WF1015ns / 9U8J3EA (2024 Intel) — ProductId 8C76

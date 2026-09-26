@@ -807,15 +807,26 @@ namespace OmenCore.Services.KeyboardLighting
         }
 
         private IEnumerable<KeyboardMethod> GetFallbackMethods(KeyboardMethod currentMethod)
+            => ResolveFallbackMethods(_modelConfig, currentMethod);
+
+        /// <summary>
+        /// Backends to try when the active one reports a failed apply. A null config (only when
+        /// model detection returns nothing - non-OMEN/Victus identity or a detection error;
+        /// unrecognised OMEN/Victus boards get a default FourZone config instead) is treated as
+        /// <see cref="KeyboardType.Unknown"/>. The old <c>_modelConfig?.KeyboardType is ...
+        /// Unknown</c> check evaluated to false for null, leaving that path with no fallback.
+        /// </summary>
+        internal static IEnumerable<KeyboardMethod> ResolveFallbackMethods(KeyboardModelConfig? modelConfig, KeyboardMethod currentMethod)
         {
             var methods = new List<KeyboardMethod>();
 
-            if (_modelConfig?.FallbackMethods is { Length: > 0 })
+            if (modelConfig?.FallbackMethods is { Length: > 0 })
             {
-                methods.AddRange(_modelConfig.FallbackMethods);
+                methods.AddRange(modelConfig.FallbackMethods);
             }
 
-            if (_modelConfig?.KeyboardType is KeyboardType.FourZone or KeyboardType.FourZoneTkl or KeyboardType.Unknown)
+            var keyboardType = modelConfig?.KeyboardType ?? KeyboardType.Unknown;
+            if (keyboardType is KeyboardType.FourZone or KeyboardType.FourZoneTkl or KeyboardType.Unknown)
             {
                 methods.AddRange(new[]
                 {

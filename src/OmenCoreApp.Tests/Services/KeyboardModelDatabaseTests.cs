@@ -7,6 +7,46 @@ namespace OmenCoreApp.Tests.Services
     public class KeyboardModelDatabaseTests
     {
         [Fact]
+        public void GetConfig_8BA9_ResolvesExactly_AsFourZoneColorTable()
+        {
+            var cfg = KeyboardModelDatabase.GetConfig("8BA9");
+            cfg.Should().NotBeNull();
+            cfg!.ProductId.Should().Be("8BA9");
+            cfg.KeyboardType.Should().Be(KeyboardType.FourZone);
+            cfg.PreferredMethod.Should().Be(KeyboardMethod.ColorTable2020);
+            cfg.FallbackMethods.Should().Contain(KeyboardMethod.NewWmi2023);
+            cfg.UserVerified.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GetConfig_88F7_ResolvesExactly_AsFourZoneColorTable()
+        {
+            var cfg = KeyboardModelDatabase.GetConfig("88F7");
+            cfg.Should().NotBeNull();
+            cfg!.ProductId.Should().Be("88F7");
+            cfg.KeyboardType.Should().Be(KeyboardType.FourZone);
+            cfg.PreferredMethod.Should().Be(KeyboardMethod.ColorTable2020);
+        }
+
+        [Fact]
+        public void ResolveFallbackMethods_UnknownBoard_NullConfig_StillOffersFallbacks()
+        {
+            // Regression: `null?.KeyboardType is ... Unknown` is false, so when model detection
+            // returned no config at all, a failed apply had no fallback backend to try.
+            KeyboardLightingServiceV2.ResolveFallbackMethods(null, KeyboardMethod.ColorTable2020)
+                .Should().BeEquivalentTo(new[] { KeyboardMethod.NewWmi2023, KeyboardMethod.EcDirect });
+        }
+
+        [Fact]
+        public void ResolveFallbackMethods_NeverRetriesTheFailedMethod()
+        {
+            var cfg = KeyboardModelDatabase.GetConfig("8C76");
+            KeyboardLightingServiceV2.ResolveFallbackMethods(cfg, KeyboardMethod.NewWmi2023)
+                .Should().NotContain(KeyboardMethod.NewWmi2023)
+                .And.Contain(KeyboardMethod.ColorTable2020);
+        }
+
+        [Fact]
         public void GetConfig_ReturnsConfig_For_ProductId_8BD5()
         {
             var cfg = KeyboardModelDatabase.GetConfig("8BD5");
