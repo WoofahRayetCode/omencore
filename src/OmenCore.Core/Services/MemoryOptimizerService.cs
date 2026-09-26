@@ -271,26 +271,28 @@ namespace OmenCore.Services
         {
             return await Task.Run(() =>
             {
-                lock (_cleanLock)
+                // TryEnter, not lock: the whole clean runs under this monitor, so with `lock` a
+                // second request (e.g. an auto-clean landing during a manual one) queued behind
+                // it and then ran a second full clean back to back, instead of being told one
+                // was already in progress.
+                if (!Monitor.TryEnter(_cleanLock))
                 {
-                    if (_isCleaning)
+                    return new MemoryCleanResult
                     {
-                        return new MemoryCleanResult
-                        {
-                            Success = false,
-                            ErrorMessage = "A memory clean operation is already in progress"
-                        };
-                    }
+                        Success = false,
+                        ErrorMessage = "A memory clean operation is already in progress"
+                    };
+                }
 
+                try
+                {
                     _isCleaning = true;
-                    try
-                    {
-                        return CleanMemoryInternal(flags);
-                    }
-                    finally
-                    {
-                        _isCleaning = false;
-                    }
+                    return CleanMemoryInternal(flags);
+                }
+                finally
+                {
+                    _isCleaning = false;
+                    Monitor.Exit(_cleanLock);
                 }
             });
         }
@@ -846,22 +848,21 @@ namespace OmenCore.Services
 
         private bool TryRunScheduledClean(string statusMessage, MemoryCleanFlags flags = MemoryCleanFlags.AllSafe)
         {
-            lock (_cleanLock)
-            {
-                if (_isCleaning)
-                    return false;
+            // Same reasoning as CleanMemoryAsync: skip, don't queue, when a clean is running.
+            if (!Monitor.TryEnter(_cleanLock))
+                return false;
 
+            try
+            {
                 _isCleaning = true;
-                try
-                {
-                    StatusChanged?.Invoke(statusMessage);
-                    CleanMemoryInternal(flags);
-                    return true;
-                }
-                finally
-                {
-                    _isCleaning = false;
-                }
+                StatusChanged?.Invoke(statusMessage);
+                CleanMemoryInternal(flags);
+                return true;
+            }
+            finally
+            {
+                _isCleaning = false;
+                Monitor.Exit(_cleanLock);
             }
         }
 
@@ -1227,6 +1228,16 @@ namespace OmenCore.Services
 
         // ========== P/INVOKE DECLARATIONS ==========
 
+        /// <summary>Wire value sent for each memory-list operation; exposed for tests.</summary>
+        internal static int MemoryListCommandValue(string operation) => operation switch
+        {
+            "EmptyWorkingSets" => (int)NativeMethods.SYSTEM_MEMORY_LIST_COMMAND.MemoryEmptyWorkingSets,
+            "FlushModifiedList" => (int)NativeMethods.SYSTEM_MEMORY_LIST_COMMAND.MemoryFlushModifiedList,
+            "PurgeStandbyList" => (int)NativeMethods.SYSTEM_MEMORY_LIST_COMMAND.MemoryPurgeStandbyList,
+            "PurgeLowPriorityStandbyList" => (int)NativeMethods.SYSTEM_MEMORY_LIST_COMMAND.MemoryPurgeLowPriorityStandbyList,
+            _ => throw new ArgumentOutOfRangeException(nameof(operation))
+        };
+
         private static class NativeMethods
         {
             // ===== ntdll.dll =====
@@ -1351,9 +1362,15 @@ namespace OmenCore.Services
                 SystemCombinePhysicalMemoryInformation = 130,
             }
 
+            // Values from the NT SYSTEM_MEMORY_LIST_COMMAND enum. 0 and 1 are the accessed-bits
+            // capture commands; EmptyWorkingSets is 2. This used to declare EmptyWorkingSets = 0,
+            // so the working-set trim sent MemoryCaptureAccessedBits instead - it returned
+            // STATUS_SUCCESS, the log said "Working sets cleaned", and nothing was trimmed.
             public enum SYSTEM_MEMORY_LIST_COMMAND
             {
-                MemoryEmptyWorkingSets = 0,
+                MemoryCaptureAccessedBits = 0,
+                MemoryCaptureAndResetAccessedBits = 1,
+                MemoryEmptyWorkingSets = 2,
                 MemoryFlushModifiedList = 3,
                 MemoryPurgeStandbyList = 4,
                 MemoryPurgeLowPriorityStandbyList = 5,

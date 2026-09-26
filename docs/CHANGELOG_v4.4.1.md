@@ -66,6 +66,31 @@ daemon took the first readable CPU sensor in sysfs enumeration order, which on t
 and the 95°C emergency never fired, while the CPU hit 99°C and throttled. CPU sensors are now
 ranked: `k10temp`/`coretemp`/`zenpower` first, `acpitz` only as a last resort.
 
+### RAM Optimizer's Working-Set Trim Never Trimmed Anything
+
+The Windows memory-list command for "empty working sets" was declared as `0`, which is actually
+`MemoryCaptureAccessedBits` (the real value is `2`). Windows accepted it, the log said "Working sets
+cleaned", and nothing was trimmed. Only the default path was affected; with process exclusions set,
+the per-process trim was already correct. Values are now pinned by tests.
+
+### RAM Optimizer Could Run Two Full Cleans Back to Back
+
+A clean requested while another was running (e.g. auto-clean landing during a manual one) queued
+behind it and then ran a second full clean, instead of reporting one was already in progress.
+
+### System Cleaner Now Uses the Vendor's Own Silent Uninstall Command
+
+Win32 uninstalls always appended guessed `/S /silent /quiet` switches to the interactive
+uninstall command. Where the vendor registers a `QuietUninstallString`, that is now used verbatim.
+
+### Windows Dynamic Lighting Detected on Four-Zone Keyboards
+
+On Windows 11, Dynamic Lighting can take over HP's four-zone keyboard (published to Windows as a
+virtual lamp device) and keep repainting it, so colours set in OmenCore don't appear or revert,
+even though the firmware reports them written. The Lighting page now shows a banner with a button
+to the Windows setting when this is the case (read-only; OmenCore never changes the setting), and
+diagnostics exports record it. Previously only detected for OMEN MAX per-key keyboards.
+
 ---
 
 ## Added

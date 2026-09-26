@@ -129,6 +129,53 @@ namespace OmenCore.ViewModels
         };
         public ICommand ApplyCorsairPresetToSystemCommand { get; }
         public ICommand SyncAllRgbCommand { get; }
+        public ICommand OpenDynamicLightingSettingsCommand { get; }
+
+        /// <summary>
+        /// Banner for four-zone keyboards when Windows Dynamic Lighting owns HP's virtual lamp
+        /// device. Windows keeps repainting it, so colours applied here can revert or never show.
+        /// Reported, never changed: the toggle is Windows' and the user's.
+        /// </summary>
+        public string KeyboardDynamicLightingWarning =>
+            BuildKeyboardDynamicLightingWarning(_keyboardLightingService?.GetDynamicLightingState(),
+                                                _keyboardLightingService?.IsPerKey ?? false);
+
+        public bool HasKeyboardDynamicLightingWarning => KeyboardDynamicLightingWarning.Length > 0;
+
+        internal static string BuildKeyboardDynamicLightingWarning(
+            OmenCore.Services.KeyboardLighting.DynamicLightingState? state, bool isPerKey)
+        {
+            // Per-key keyboards get their own, differently-worded banner in the key map editor.
+            if (isPerKey || state == null || !state.DeviceFound || !state.WillRepaintWhenReleased)
+                return string.Empty;
+
+            return "Windows Dynamic Lighting is controlling this keyboard. Windows repaints it on its own " +
+                   "schedule, so colours set here may not appear or may revert. Turn Dynamic Lighting off " +
+                   "for the HP keyboard (or \"Use Dynamic Lighting on my devices\") to let OmenCore keep them.";
+        }
+
+        private void OpenDynamicLightingSettings()
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "ms-settings:personalization-lighting",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                _logging.Warn($"[Lighting] Could not open the Dynamic Lighting settings page: {ex.Message}");
+            }
+        }
+
+        /// <summary>Re-read the Dynamic Lighting banner, e.g. when the page comes back into view.</summary>
+        public void RefreshKeyboardDynamicLighting()
+        {
+            OnPropertyChanged(nameof(KeyboardDynamicLightingWarning));
+            OnPropertyChanged(nameof(HasKeyboardDynamicLightingWarning));
+        }
         
         #region Scene Properties
         
@@ -1431,6 +1478,7 @@ namespace OmenCore.ViewModels
             
             // Sync All RGB Command
             SyncAllRgbCommand = new AsyncRelayCommand(async _ => await SyncAllRgbAsync());
+            OpenDynamicLightingSettingsCommand = new RelayCommand(_ => OpenDynamicLightingSettings());
             
             // Initialize Logitech commands (only functional if service is available)
             DiscoverLogitechDevicesCommand = new AsyncRelayCommand(async _ =>

@@ -330,8 +330,20 @@ namespace OmenCore.Services.KeyboardLighting
         /// Null is not "nothing to worry about" — it is "unknown", and a caller should say nothing
         /// rather than guess in either direction.
         /// </summary>
-        public DynamicLightingState? GetDynamicLightingState() =>
-            (_activeBackend as DojoPerKeyBackend)?.DynamicLighting;
+        public DynamicLightingState? GetDynamicLightingState() => _activeBackend switch
+        {
+            DojoPerKeyBackend dojo => dojo.DynamicLighting,
+            // Four-zone keyboards: HP's OMENLighting filter driver publishes the keyboard to
+            // Windows as a virtual LampArray (VID 0x0461, PID 0 - "FourZone" in OGH's device
+            // table, per the Ohman project's notes). While Dynamic Lighting owns it, Windows keeps
+            // repainting it, so a ColorTable write can read back byte-exact and still not stay
+            // on the keys. Read-only, like the per-key case: reported, never changed.
+            WmiBiosBackend or EcDirectBackend => DynamicLightingState.Read(FourZoneVirtualLampVid, FourZoneVirtualLampPid),
+            _ => null
+        };
+
+        internal const ushort FourZoneVirtualLampVid = 0x0461;
+        internal const ushort FourZoneVirtualLampPid = 0x0000;
 
         /// <summary>
         /// Colour individually addressed keys, leaving every unnamed key alone.

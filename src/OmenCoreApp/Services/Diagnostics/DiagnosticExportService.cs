@@ -1526,6 +1526,11 @@ namespace OmenCore.Services.Diagnostics
             }
             sb.AppendLine($"LastApplySurface: {_keyboardLightingService.LastApplySurface}");
             sb.AppendLine($"LastApplyStatus: {_keyboardLightingService.LastApplyStatus}");
+            var dynamicLighting = _keyboardLightingService.GetDynamicLightingState();
+            sb.AppendLine(dynamicLighting == null
+                ? "WindowsDynamicLighting: not applicable to this backend"
+                : $"WindowsDynamicLighting: global={dynamicLighting.GlobalEnabled}, deviceFound={dynamicLighting.DeviceFound}, " +
+                  $"deviceEnabled={dynamicLighting.DeviceEnabled}, willRepaint={dynamicLighting.WillRepaintWhenReleased}");
             AppendRgbObservedSurface(sb, observedRgb);
             sb.AppendLine();
         }

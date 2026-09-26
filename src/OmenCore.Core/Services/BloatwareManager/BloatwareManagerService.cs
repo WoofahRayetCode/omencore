@@ -260,6 +260,9 @@ namespace OmenCore.Services.BloatwareManager
                         var displayName = subKey.GetValue("DisplayName")?.ToString();
                         var publisher = subKey.GetValue("Publisher")?.ToString();
                         var uninstallString = subKey.GetValue("UninstallString")?.ToString();
+                        // The vendor's own silent command, when registered, beats guessing silent
+                        // switches onto the interactive one.
+                        var quietUninstallString = subKey.GetValue("QuietUninstallString")?.ToString();
 
                         if (string.IsNullOrEmpty(displayName)) continue;
 
@@ -275,7 +278,8 @@ namespace OmenCore.Services.BloatwareManager
                                 Category = category,
                                 Description = description,
                                 RemovalRisk = risk,
-                                UninstallCommand = uninstallString,
+                                UninstallCommand = string.IsNullOrWhiteSpace(quietUninstallString) ? uninstallString : quietUninstallString,
+                                UninstallCommandIsQuiet = !string.IsNullOrWhiteSpace(quietUninstallString),
                                 CanRestore = false, // Win32 apps generally can't be restored
                                 IsRemoved = false
                             };
@@ -921,7 +925,7 @@ namespace OmenCore.Services.BloatwareManager
                 return true;
             }
 
-            var (cmd, args) = ParseWin32UninstallCommand(app.UninstallCommand);
+            var (cmd, args) = ParseWin32UninstallCommand(app.UninstallCommand, app.UninstallCommandIsQuiet);
             if (string.IsNullOrWhiteSpace(cmd))
             {
                 _logger.Warn($"Could not parse Win32 uninstall command for {app.Name}: {app.UninstallCommand}");
@@ -976,8 +980,15 @@ namespace OmenCore.Services.BloatwareManager
             }
         }
 
-        private (string fileName, string arguments) ParseWin32UninstallCommand(string uninstallCommand)
+        /// <summary>
+        /// Split a registry uninstall command into file and arguments. MSI commands become a silent
+        /// /X. For other uninstallers, generic silent switches are appended only when the command
+        /// is not already the vendor's registered QuietUninstallString.
+        /// </summary>
+        internal static (string fileName, string arguments) ParseWin32UninstallCommand(string uninstallCommand, bool isQuietCommand = false)
         {
+            string Silent(string a) => isQuietCommand ? a : AppendSilentFlags(a);
+
             var command = uninstallCommand.Trim();
             if (string.IsNullOrWhiteSpace(command))
             {
@@ -1004,7 +1015,7 @@ namespace OmenCore.Services.BloatwareManager
                 {
                     var fileName = command[1..endQuote];
                     var args = command[(endQuote + 1)..].Trim();
-                    return (fileName, AppendSilentFlags(args));
+                    return (fileName, Silent(args));
                 }
             }
 
@@ -1013,7 +1024,7 @@ namespace OmenCore.Services.BloatwareManager
             {
                 var fileName = command[..(exeIndex + 4)].Trim();
                 var args = command[(exeIndex + 4)..].Trim();
-                return (fileName, AppendSilentFlags(args));
+                return (fileName, Silent(args));
             }
 
             return (command, string.Empty);
@@ -2760,6 +2771,8 @@ namespace OmenCore.Services.BloatwareManager
             set => SetField(ref _isRemoved, value);
         }
         public string? UninstallCommand { get; set; }
+        /// <summary>True when <see cref="UninstallCommand"/> is the vendor's registered QuietUninstallString.</summary>
+        public bool UninstallCommandIsQuiet { get; set; }
         public string? RegistryPath { get; set; }
         public string? RegistryHive { get; set; }
         public string? StartupFilePath { get; set; }

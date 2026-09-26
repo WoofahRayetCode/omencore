@@ -188,6 +188,22 @@
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,0"/>
 
+                        <!-- Windows Dynamic Lighting owns HP's four-zone virtual lamp device. Blue, not
+                             amber: it's another feature's setting, not a fault in ours. -->
+                        <Border Background="#2230A0E0" BorderBrush="#30A0E0" BorderThickness="1" CornerRadius="6"
+                                Padding="10" Margin="0,10,0,0"
+                                Visibility="{Binding HasKeyboardDynamicLightingWarning, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding KeyboardDynamicLightingWarning}" FontSize="11" Foreground="#8CC8F0"
+                                           TextWrapping="Wrap"/>
+                                <Button Content="Open Dynamic Lighting settings"
+                                        Command="{Binding OpenDynamicLightingSettingsCommand}"
+                                        Style="{StaticResource ModernButton}" Padding="12,4" Margin="0,8,0,0"
+                                        HorizontalAlignment="Left" FontSize="11"
+                                        AutomationProperties.Name="Open the Windows Dynamic Lighting settings page"/>
+                            </StackPanel>
+                        </Border>
+
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
