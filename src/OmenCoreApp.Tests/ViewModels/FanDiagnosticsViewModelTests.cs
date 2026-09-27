@@ -132,6 +132,7 @@ namespace OmenCoreApp.Tests.ViewModels
 
             vm.GuidedTestResult.Should().Contain("evidence:");
             vm.GuidedTestResult.Should().Contain("RPM");
+            vm.GuidedTestResult.Should().Contain("RGB: Skipped: integrated RGB backend unavailable");
 
             logging.Dispose();
         }

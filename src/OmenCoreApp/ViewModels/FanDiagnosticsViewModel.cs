@@ -8,6 +8,7 @@ using System.Windows.Input;
 using OmenCore.Models;
 using OmenCore.Services;
 using OmenCore.Utils;
+using System.Drawing;
 
 namespace OmenCore.ViewModels
 {
@@ -16,6 +17,7 @@ namespace OmenCore.ViewModels
         private readonly IFanVerificationService _verifier;
         private readonly FanService _fanService;
         private readonly LoggingService _logging;
+        private KeyboardLightingService? _keyboardLightingService;
         
         private bool _isDiagnosticActive;
         
@@ -65,6 +67,21 @@ namespace OmenCore.ViewModels
 
         public bool IsVerificationAvailable => _verifier?.IsAvailable ?? false;
 
+        /// <summary>
+        /// True when the guided field-verification sequence can also exercise the
+        /// integrated keyboard RGB path. The result is intentionally advisory:
+        /// software can confirm that a safe write was accepted, but only the user
+        /// can confirm that the physical keyboard changed.
+        /// </summary>
+        public bool IsRgbCheckAvailable => _keyboardLightingService?.IsAvailable == true;
+
+        private string _rgbCheckStatus = "RGB check not run";
+        public string RgbCheckStatus
+        {
+            get => _rgbCheckStatus;
+            private set { _rgbCheckStatus = value; OnPropertyChanged(); }
+        }
+
         public ICommand RefreshStateCommand { get; }
         public ICommand ApplyAndVerifyCommand { get; }
 
@@ -92,6 +109,17 @@ namespace OmenCore.ViewModels
             // Default to CPU fan
             SelectedFanIndex = 0;
             UpdateCurrentState();
+        }
+
+        /// <summary>
+        /// Supplies the lighting service after the main hardware graph has been
+        /// constructed. Fan diagnostics are initialized slightly earlier than the
+        /// keyboard service during startup.
+        /// </summary>
+        public void AttachKeyboardLightingService(KeyboardLightingService? keyboardLightingService)
+        {
+            _keyboardLightingService = keyboardLightingService;
+            OnPropertyChanged(nameof(IsRgbCheckAvailable));
         }
 
         private void UpdateCurrentState()
@@ -332,6 +360,11 @@ namespace OmenCore.ViewModels
                     
                     GuidedTestProgress = ((levelIndex + 1) * 100) / testLevels.Length;
                 }
+
+                // RGB is a physical check, not an electronically verifiable result.
+                // Exercise only the safe keyboard backend and make the user-visible
+                // limitation explicit in both the status and copied summary.
+                var rgbSummary = await RunGuidedRgbCheckAsync();
                 
                 // Generate summary with scores (v2.7.0)
                 var passCount = results.Count(r => r.passed);
@@ -358,6 +391,7 @@ namespace OmenCore.ViewModels
                     : string.Join(" + ", sourcesSeen.Distinct().OrderBy(s => s.ToString()));
                 summary.AppendLine($"Backend: {_fanService.Backend} | RPM source: {sourceLabel}");
                 summary.AppendLine($"Tests: {passCount}/{totalTests} passed | Overall Score: {avgScore}/100 ({overallRating})");
+                summary.AppendLine($"RGB: {rgbSummary}");
                 summary.AppendLine();
                 
                 foreach (var r in results)
@@ -401,6 +435,41 @@ namespace OmenCore.ViewModels
                 IsGuidedTestRunning = false;
                 IsDiagnosticActive = false;
                 GuidedTestProgress = 100;
+            }
+        }
+
+        private async Task<string> RunGuidedRgbCheckAsync()
+        {
+            if (_keyboardLightingService?.IsAvailable != true)
+            {
+                RgbCheckStatus = "Skipped: integrated RGB backend unavailable";
+                return RgbCheckStatus;
+            }
+
+            try
+            {
+                RgbCheckStatus = "Applying RGB test pattern...";
+                var pattern = new[]
+                {
+                    Color.Red,
+                    Color.Lime,
+                    Color.Blue,
+                    Color.Yellow
+                };
+
+                await _keyboardLightingService.SetAllZoneColors(pattern);
+                await Task.Delay(1000);
+                _keyboardLightingService.RestoreDefaults();
+
+                RgbCheckStatus = "Pattern applied and defaults restored; physical confirmation required";
+                _logging.Info("[GuidedDiagnostic] RGB test pattern applied through the safe keyboard backend; physical confirmation is required");
+                return RgbCheckStatus;
+            }
+            catch (Exception ex)
+            {
+                RgbCheckStatus = $"Failed: {ex.Message}";
+                _logging.Warn($"[GuidedDiagnostic] RGB check failed: {ex.Message}");
+                return RgbCheckStatus;
             }
         }
         
