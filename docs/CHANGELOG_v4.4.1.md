@@ -241,6 +241,15 @@ Keyboard navigation for the page rail: Ctrl+1 through Ctrl+9 opens the Nth page 
 screen, counting only visible pages, so the numbers stay right when advanced pages are hidden.
 Ignored while typing in a text field.
 
+### Board `8E35` (OMEN 16-ap0xxx, Ryzen 9 8940HX): Performance Mode Confirmed at the Firmware
+
+[#195](https://github.com/theantipopau/omencore/issues/195): the WMI policy fallback enabled in 4.4.0
+is now confirmed by direct PM-table readback. Balanced held STAPM/fast/slow at 75/75/65 W in every
+sample; only Performance reached 80/80/80 W (the firmware's own governor then alternates within it).
+Guided Fan Verification (30%/60% on both fans, audible) and four-zone RGB are confirmed too. With the
+firmware-ceiling change above, the 100% step should pass on this build, the last item before
+`UserVerified`. Notes only; no flag changed.
+
 ---
 
 ## Investigated, Not Fixed
@@ -258,7 +267,8 @@ if the `WmiBiosBackend` byte-0 fix doesn't resolve `#212` on real hardware, the 
 Closed during this cycle as already resolved in 4.4.0 or duplicated elsewhere: `#170` (`8A3E`
 already in the database), `#188` (`8D26` entry shipped), `#174` (duplicate of `#199`), `#156`
 (duplicate of `#149`). Close when this release ships: `#115` and `#172` (8BBE misidentification),
-`#214` (Linux CPU sensor), `#215` (88F7 entry), `#198` (stuck Max after verification). `#199` stays open for `8BA9` verification.
+`#214` (Linux CPU sensor), `#215` (88F7 entry), `#205` (8C2D entry; the 4.3.1 regression it
+reports was fixed in 4.4.0). `#198` (stuck Max after verification) was already closed; fixed here. `#199` stays open for `8BA9` verification.
 
 ---
 
