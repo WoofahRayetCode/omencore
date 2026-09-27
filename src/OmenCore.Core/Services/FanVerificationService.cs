@@ -421,6 +421,18 @@ namespace OmenCore.Services
                     }
                 }
 
+                // GitHub #198 (board 8BBE): never leave the firmware's Max flag latched behind this
+                // method. It is set here directly, bypassing WmiFanController's own Max tracking, so
+                // nothing later knows to clear it: Guided Fan Verification ends on its 100% steps,
+                // "restores" auto by setting fan mode Default, and the fans stayed at full speed until
+                // something happened to route through the controller's Max-exit sequence. Swap it for
+                // a plain level write at the same ceiling - still 100% for any caller that asked for
+                // it, but a state every preset change and auto restore already hands back.
+                if (usedSetFanMax)
+                {
+                    ReleaseFirmwareMaxFlag(result.ExpectedLevel);
+                }
+
                 // Final diagnostic message if verification still failed
                 if (!result.VerificationPassed)
                 {
@@ -443,6 +455,21 @@ namespace OmenCore.Services
             
             result.Duration = DateTime.Now - startTime;
             return result;
+        }
+
+        private void ReleaseFirmwareMaxFlag(int holdLevel)
+        {
+            if (_wmiBios == null) return;
+            try
+            {
+                var cleared = _wmiBios.SetFanMax(false);
+                var held = _wmiBios.SetFanLevel((byte)holdLevel, (byte)holdLevel);
+                _logging.Info($"Released firmware Max flag after 100% test (cleared={cleared}); holding level {holdLevel} via direct write (ok={held})");
+            }
+            catch (Exception ex)
+            {
+                _logging.Warn($"Could not release firmware Max flag after 100% test: {ex.Message}");
+            }
         }
 
         private static string GetVerificationFailureTip()

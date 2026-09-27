@@ -3,7 +3,7 @@
 **Release Date:** TBD — in progress. Rolling changelog, updated as work lands.
 **Release Status:** In progress. Started 2026-09-25, one day after v4.4.0 shipped.
 **Type:** Field-report follow-up to 4.4.0. The first release delivered by the fixed in-app
-updater. Twelve fixes across fan control (watchdog failsafe,
+updater. Thirteen fixes across fan control (stuck Max after verification, watchdog failsafe,
 fan-verification Max fallback, diagnostic keepalive guard), RGB (Dynamic Lighting detection,
 keyboard backend fallback), UI (Victus GPU Power Boost display, startup mode label), the RAM
 optimizer (working-set trim, double clean), tuning (revert pending tests on exit), the system cleaner (vendor silent uninstall) and Linux
@@ -69,6 +69,17 @@ beside the backend's own "skipped - HP Victus does not support WMI TGP/PPAB cont
 gate treated "WMI BIOS is present" as GPU-power evidence. It now mirrors the backend's Victus rule
 exactly: hidden unless the board's entry explicitly opts in. Non-Victus boards are unchanged.
 First raised in PR [#210](https://github.com/theantipopau/omencore/pull/210); narrowed to Victus here.
+
+### Fans Stuck at Full Speed After Guided Fan Verification
+
+[#198](https://github.com/theantipopau/omencore/issues/198) (board `8BBE`): the verification's 100%
+steps set the firmware's Max flag directly, bypassing the fan controller's own Max tracking. When
+the test finished it restored BIOS auto by setting fan mode Default, but nothing knew to clear Max,
+so the fans stayed at full speed and ignored profile changes until something happened to route
+through the Max-exit sequence (or the firmware timed it out). After a 100% step, the Max flag is now
+released and replaced with a normal level write at the same ceiling, which every preset change and
+auto restore already hands back. Also covers the Fan Control page's post-apply check, which uses
+the same routine. Possibly also behind the stuck-at-max report in `#213`.
 
 ### Guided Fan Diagnostic Could Be Overridden by the Keepalive From Max or Manual Mode
 
