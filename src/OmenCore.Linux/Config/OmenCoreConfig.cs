@@ -188,6 +188,9 @@ public class OmenCoreConfig
             throttle_temp_c = 95
             # CPU temperature (degrees C) below which the system is considered cooled-down.
             restore_temp_c = 80
+            # Optional: force the CPU temperature source by hwmon driver name, e.g. "k10temp".
+            # Leave empty for automatic selection (dedicated CPU drivers first, ACPI zones last).
+            # cpu_sensor = "k10temp"
 
             [keyboard]
             # Enable keyboard lighting control
@@ -383,6 +386,8 @@ public class OmenCoreConfig
                 config.Thermal.ThrottleTempC = throttle;
             if (GetInt(thermal, "restore_temp_c") is { } restoreTemp)
                 config.Thermal.RestoreTempC = restoreTemp;
+            if (GetString(thermal, "cpu_sensor") is { } cpuSensor)
+                config.Thermal.CpuSensor = cpuSensor.Trim();
         }
 
         if (TryGetTable(root, "keyboard", out var keyboard))
@@ -674,4 +679,11 @@ public class ThermalConfig
     /// CPU C below which the system is considered cooled-down and the performance mode is re-applied.
     /// </summary>
     public int RestoreTempC { get; set; } = 80;
+
+    /// <summary>
+    /// Optional hwmon driver name to use for CPU temperature (e.g. "k10temp", "coretemp",
+    /// "zenpower"). Matched by driver name, not hwmon index, since indexes reshuffle between boots.
+    /// Empty = automatic ranking. If the named driver has no readable sensor, automatic ranking is used.
+    /// </summary>
+    public string CpuSensor { get; set; } = string.Empty;
 }

@@ -30,9 +30,25 @@ public class LinuxHwMonController
     public bool HasGpuSensor => _gpuSensorPaths.Count > 0;
     public int AvailableSensorCount => _cpuSensorPaths.Count + _gpuSensorPaths.Count;
     
-    public LinuxHwMonController()
+    private readonly string _preferredCpuSensor;
+
+    /// <param name="preferredCpuSensor">
+    /// Optional hwmon driver name (config <c>thermal.cpu_sensor</c>) that outranks automatic
+    /// selection. GitHub #214 asked for an override; an unknown name simply has no effect.
+    /// </param>
+    public LinuxHwMonController(string? preferredCpuSensor = null)
     {
+        _preferredCpuSensor = preferredCpuSensor?.Trim().ToLowerInvariant() ?? string.Empty;
         DiscoverSensors();
+    }
+
+    /// <summary>Rank including the user's override: a matching driver name always goes first.</summary>
+    public static int GetCpuSensorRank(string sensorName, string? preferredCpuSensor)
+    {
+        var preferred = preferredCpuSensor?.Trim().ToLowerInvariant();
+        if (!string.IsNullOrEmpty(preferred) && sensorName.Trim().ToLowerInvariant() == preferred)
+            return -1;
+        return GetCpuSensorRank(sensorName);
     }
     
     /// <summary>
@@ -101,9 +117,10 @@ public class LinuxHwMonController
                 if (name.Contains("coretemp") || name.Contains("k10temp") || 
                     name.Contains("zenpower") || name.Contains("amd_energy") ||
                     name.Contains("thinkpad") || name.Contains("hp") ||
-                    name.Contains("acpitz"))
+                    name.Contains("acpitz") ||
+                    (_preferredCpuSensor.Length > 0 && name == _preferredCpuSensor))
                 {
-                    AddCpuSensorPaths(hwmonDir, GetCpuSensorRank(name));
+                    AddCpuSensorPaths(hwmonDir, GetCpuSensorRank(name, _preferredCpuSensor));
                 }
                 
                 // GPU temperature sensors (in priority order)
@@ -141,7 +158,7 @@ public class LinuxHwMonController
                 if (type.Contains("x86_pkg") || type.Contains("acpitz") || 
                     type.Contains("cpu") || type.Contains("soc"))
                 {
-                    _cpuSensorCandidates.Add((GetCpuSensorRank(type), tempPath));
+                    _cpuSensorCandidates.Add((GetCpuSensorRank(type, _preferredCpuSensor), tempPath));
                 }
                 
                 // GPU thermal zones (less common but worth checking)

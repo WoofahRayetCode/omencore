@@ -40,4 +40,18 @@ public class LinuxCpuSensorRankTests
     {
         LinuxHwMonController.GetCpuSensorRank(" K10TEMP\n").Should().Be(0);
     }
+
+    [Fact]
+    public void ConfiguredOverride_OutranksEverything()
+    {
+        LinuxHwMonController.GetCpuSensorRank("acpitz", "acpitz").Should().BeLessThan(LinuxHwMonController.GetCpuSensorRank("k10temp", "acpitz"));
+        LinuxHwMonController.GetCpuSensorRank("nct6775", "NCT6775").Should().Be(-1);
+    }
+
+    [Fact]
+    public void NoOverride_KeepsAutomaticRanking()
+    {
+        LinuxHwMonController.GetCpuSensorRank("k10temp", null).Should().Be(0);
+        LinuxHwMonController.GetCpuSensorRank("k10temp", "").Should().Be(0);
+    }
 }

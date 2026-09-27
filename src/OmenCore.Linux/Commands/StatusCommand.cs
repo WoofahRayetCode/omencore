@@ -35,9 +35,9 @@ public static class StatusCommand
     private static async Task HandleStatusCommandAsync(bool jsonOutput)
     {
         var ec = new LinuxEcController();
-        var hwmon = new LinuxHwMonController();
-        var keyboard = new LinuxKeyboardController();
         var config = OmenCoreConfig.Load();
+        var hwmon = new LinuxHwMonController(config.Thermal.CpuSensor);
+        var keyboard = new LinuxKeyboardController();
         var isRoot = LinuxEcController.CheckRootAccess();
         var ecIoPathExists = File.Exists(LinuxSysfsPathMap.EcIoPath);
         var hpWmiPathExists = Directory.Exists(LinuxSysfsPathMap.HpWmiRoot);

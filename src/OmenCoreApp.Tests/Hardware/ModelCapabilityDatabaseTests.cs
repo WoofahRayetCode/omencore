@@ -663,6 +663,22 @@ namespace OmenCoreApp.Tests.Hardware
         }
 
         [Fact]
+        public void GetCapabilities_8C2D_ResolvesExactly_WithBothFirmwareFans()
+        {
+            // GitHub #205: was resolving to 8BB1-VICTUS15 by name pattern, which reports one fan.
+            var caps = ModelCapabilityDatabase.GetCapabilities("8C2D");
+
+            caps.ProductId.Should().Be("8C2D");
+            caps.Family.Should().Be(OmenModelFamily.Victus);
+            caps.FanZoneCount.Should().Be(2);
+            caps.SupportsFanControlWmi.Should().BeTrue();
+            caps.SupportsFanCurves.Should().BeFalse("fan writes not yet exercised on this board");
+            caps.HasFourZoneRgb.Should().BeFalse();
+            caps.SupportsGpuPowerBoost.Should().BeFalse();
+            caps.UserVerified.Should().BeFalse();
+        }
+
+        [Fact]
         public void GetCapabilities_88F7_ResolvesExactly_WithVerifiedLevelWritesAndMuxOff()
         {
             // GitHub #215: was Family fallback. Level writes verified at 30/60% -> curves on;

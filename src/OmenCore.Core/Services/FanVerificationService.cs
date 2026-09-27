@@ -421,6 +421,19 @@ namespace OmenCore.Services
                     }
                 }
 
+                // A 100% request the firmware settles just short of - both through SetFanMax and the
+                // direct-level retry above - is the board's own ceiling, not a failure: 8E35 (#195)
+                // plateaued at 48/55 with both fans audibly at full speed, 88F7 (#215) at 46/55. The
+                // floor is deliberately high: 88F8 (#207), where Max never rose past the 60% step's
+                // level (33/55, 60%), must still fail.
+                if (!result.VerificationPassed && IsFirmwareCeilingPlateau(result))
+                {
+                    result.VerificationPassed = true;
+                    result.VerificationEvidence = "FirmwareCeiling";
+                    _logging.Info($"Fan {fanIndex}: 100% settled at firmware ceiling level {result.ActualLevelAfter}/{result.ExpectedLevel} " +
+                                  "(Max and a direct write both accepted, readback stable) - treated as this board's maximum, not a failure.");
+                }
+
                 // GitHub #198 (board 8BBE): never leave the firmware's Max flag latched behind this
                 // method. It is set here directly, bypassing WmiFanController's own Max tracking, so
                 // nothing later knows to clear it: Guided Fan Verification ends on its 100% steps,
@@ -850,6 +863,22 @@ namespace OmenCore.Services
             }
 
             return $"expected level {result.ExpectedLevel}, got level {result.ActualLevelAfter}; {result.RpmDisplay} is not independent physical RPM evidence";
+        }
+
+        /// <summary>
+        /// A 100% request whose level readback settled at or above 80% of the expected ceiling, with
+        /// no physical RPM source contradicting it. Only consulted after Max and a direct-level write
+        /// have both been tried.
+        /// </summary>
+        internal static bool IsFirmwareCeilingPlateau(FanApplyResult result)
+        {
+            if (result.RequestedPercent < 100 || result.ExpectedLevel <= 0 || result.ActualLevelAfter <= 0)
+                return false;
+
+            if (IsPhysicalRpmSource(result.RpmSource) && result.ActualRpmAfter <= 0)
+                return false;
+
+            return result.ActualLevelAfter * 100 >= result.ExpectedLevel * 80;
         }
 
         private static string DetermineVerificationEvidence(bool rpmMatched, bool levelMatched)

@@ -46,7 +46,7 @@ public class OmenCoreDaemon : IDisposable
     {
         _config = config;
         _ec = new LinuxEcController();
-        _hwmon = new LinuxHwMonController();
+        _hwmon = new LinuxHwMonController(config.Thermal.CpuSensor);
         _keyboard = new LinuxKeyboardController();
         _battery = new LinuxBatteryController();
         

@@ -1959,6 +1959,33 @@ namespace OmenCore.Hardware
                 Notes = "GitHub PR #200 - HP Victus 15-fb3xxx, ProductId 8DD0, Ryzen 7 7445HS + RTX 2050, BIOS F.15. Contributor verified Max fan via WMI with level/RPM readback, manual level writes and keepalive on this board. Flags mirror 8DD2; UserVerified withheld pending a full verification pass."
             });
 
+            // Victus 15-fa1xxx, Intel i5-12450H + RTX 4050, board 8C2D. GitHub #205 export (4.3.1, BIOS
+            // F.20). Previously resolved by the 15-fa1 name pattern to 8BB1-VICTUS15, which cut the
+            // firmware's two fans down to one. From the export: V0 thermal policy (SW-fan-control bit
+            // unpopulated, the 4.3.1 monitoring-only regression's trigger), Fan Count 2, 55 levels,
+            // keyboard topology Normal (backlight only). Fan writes not exercised yet (4.3.1 had them
+            // disabled), so curves stay off until a Guided Fan Verification run.
+            AddModel(new ModelCapabilities
+            {
+                ProductId = "8C2D",
+                ModelName = "HP Victus 15-fa1xxx Intel (8C2D)",
+                Family = OmenModelFamily.Victus,
+                SupportsFanControlWmi = true,
+                SupportsFanControlEc = false,
+                SupportsFanCurves = false,
+                SupportsIndependentFanCurves = false,
+                SupportsRpmReadback = false,
+                FanZoneCount = 2,
+                MaxFanLevel = 55,
+                HasMuxSwitch = false,
+                SupportsGpuPowerBoost = false,
+                SupportsUndervolt = false,
+                HasFourZoneRgb = false,
+                HasKeyboardBacklight = true,
+                UserVerified = false,
+                Notes = "GitHub #205 - Victus 15-fa1xxx, ProductId 8C2D, i5-12450H + RTX 4050, BIOS F.20. V0 policy, 2 fans, 55 levels, backlight-only keyboard (topology Normal). Fan writes unexercised (export from 4.3.1 monitoring-only regression); curves off pending Guided Fan Verification."
+            });
+
             // Victus 16-d0xxx (2021), Intel + RTX 3060, board 88F8. GitHub #207: 4.4.0 export, BIOS
             // F.32. Flags come from that export, not a sibling: V0 policy (SW-fan-control bit reads
             // false, but Guided Fan Verification passed 30%/60% on both fans with level evidence),

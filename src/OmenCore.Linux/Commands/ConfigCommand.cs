@@ -162,6 +162,7 @@ public static class ConfigCommand
         Console.WriteLine($"restore_performance_after_throttle = {config.Thermal.RestorePerformanceAfterThrottle.ToString().ToLowerInvariant()}");
         Console.WriteLine($"throttle_temp_c = {config.Thermal.ThrottleTempC}");
         Console.WriteLine($"restore_temp_c = {config.Thermal.RestoreTempC}");
+        Console.WriteLine($"cpu_sensor = \"{config.Thermal.CpuSensor}\"");
 
         if (report.Migrations.Count > 0 || report.Warnings.Count > 0)
         {
@@ -255,6 +256,10 @@ public static class ConfigCommand
                 return TrySetInt(rawValue, 70, 110, v => config.Thermal.ThrottleTempC = v, out error);
             case "thermal.restore_temp_c":
                 return TrySetInt(rawValue, 50, 100, v => config.Thermal.RestoreTempC = v, out error);
+            case "thermal.cpu_sensor":
+                config.Thermal.CpuSensor = rawValue.Trim().Trim('"');
+                error = string.Empty;
+                return true;
 
             default:
                 error = "Unknown key. Run --show to see supported keys.";
@@ -284,6 +289,7 @@ public static class ConfigCommand
             "thermal.restore_performance_after_throttle" => config.Thermal.RestorePerformanceAfterThrottle.ToString().ToLowerInvariant(),
             "thermal.throttle_temp_c" => config.Thermal.ThrottleTempC.ToString(),
             "thermal.restore_temp_c" => config.Thermal.RestoreTempC.ToString(),
+            "thermal.cpu_sensor" => config.Thermal.CpuSensor,
             _ => null
         };
     }

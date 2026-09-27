@@ -3,11 +3,11 @@
 **Release Date:** TBD — in progress. Rolling changelog, updated as work lands.
 **Release Status:** In progress. Started 2026-09-25, one day after v4.4.0 shipped.
 **Type:** Field-report follow-up to 4.4.0. The first release delivered by the fixed in-app
-updater. Thirteen fixes across fan control (stuck Max after verification, watchdog failsafe,
+updater. Fourteen fixes across fan control (stuck Max after verification, firmware Max ceiling, watchdog failsafe,
 fan-verification Max fallback, diagnostic keepalive guard), RGB (Dynamic Lighting detection,
 keyboard backend fallback), UI (Victus GPU Power Boost display, startup mode label), the RAM
 optimizer (working-set trim, double clean), tuning (revert pending tests on exit), the system cleaner (vendor silent uninstall) and Linux
-(CPU sensor selection); three new board entries (`8BBE`, `88F8`, `88F7`) plus a keyboard entry for
+(CPU sensor selection); four new board entries (`8BBE`, `88F8`, `88F7`, `8C2D`) plus a keyboard entry for
 `8BA9`; experimental per-key colour for 2021-2024 OMEN 16/17 Primax keyboards; and one RGB fix
 awaiting hardware confirmation (`#212`). Sources: post-release diagnostics exports, GitHub issues,
 Discord, a community fork, PR `#210`, and the Ohman project's published research.
@@ -80,6 +80,15 @@ through the Max-exit sequence (or the firmware timed it out). After a 100% step,
 released and replaced with a normal level write at the same ceiling, which every preset change and
 auto restore already hands back. Also covers the Fan Control page's post-apply check, which uses
 the same routine. Possibly also behind the stuck-at-max report in `#213`.
+
+### Guided Fan Verification Failed Boards Whose Firmware Max Is Just Below the Table Ceiling
+
+Some boards accept Max but settle a little short of the 55-level table ceiling: `8E35` at 48/55
+with both fans audibly at full speed ([#195](https://github.com/theantipopau/omencore/issues/195)),
+`88F7` at 46/55 ([#215](https://github.com/theantipopau/omencore/issues/215)). The 100% step
+reported those as failures. Once both Max and a direct level write have been tried, a stable
+readback at 80% of the ceiling or above now passes as evidence `FirmwareCeiling`, the board's own
+maximum. A board where Max never moved past the 60% step (`88F8`, 33/55) still fails.
 
 ### Guided Fan Diagnostic Could Be Overridden by the Keepalive From Max or Manual Mode
 
@@ -178,6 +187,20 @@ and `88F4`–`88F6`/`88FD`/`8A13`–`8A16` (OMEN 16), when the SKU has the per-k
   [Ohman](https://github.com/P4R1H/ohman) project's published research (confirmed there on board
   `8BAD`), used as documentation only; no Ohman code was copied.
 
+### Board `8C2D` (Victus 15-fa1xxx, Intel) Given an Exact Entry
+
+[#205](https://github.com/theantipopau/omencore/issues/205): resolved by the `15-fa1` name pattern
+to the `8BB1` Victus profile, which reports one fan; the firmware reports two. From the export:
+V0 policy, two fans, 55 levels, backlight-only keyboard. Fan curves stay off until a Guided Fan
+Verification run on 4.4.x (the export came from 4.3.1, where fan writes were wrongly disabled).
+
+### Linux: CPU Temperature Sensor Can Be Chosen in Config
+
+Requested in [#214](https://github.com/theantipopau/omencore/issues/214). New `thermal.cpu_sensor`
+(e.g. `"k10temp"`) picks the CPU temperature source by hwmon driver name, never by index, which
+reshuffles between boots. Honoured by the daemon, `status`, `diagnose` and `monitor`; an unknown name
+falls back to automatic ranking. Also settable with `omencore-cli config --set thermal.cpu_sensor=k10temp`.
+
 ### Board `88F7` (OMEN 17-ck0xxx, Intel) Given Exact Capability and Keyboard Entries
 
 [#215](https://github.com/theantipopau/omencore/issues/215): was Family fallback, which also hid the
@@ -235,7 +258,7 @@ if the `WmiBiosBackend` byte-0 fix doesn't resolve `#212` on real hardware, the 
 Closed during this cycle as already resolved in 4.4.0 or duplicated elsewhere: `#170` (`8A3E`
 already in the database), `#188` (`8D26` entry shipped), `#174` (duplicate of `#199`), `#156`
 (duplicate of `#149`). Close when this release ships: `#115` and `#172` (8BBE misidentification),
-`#214` (Linux CPU sensor), `#215` (88F7 entry). `#199` stays open for `8BA9` verification.
+`#214` (Linux CPU sensor), `#215` (88F7 entry), `#198` (stuck Max after verification). `#199` stays open for `8BA9` verification.
 
 ---
 

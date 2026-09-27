@@ -160,7 +160,7 @@ public static class DiagnoseCommand
         info.HpWmiThermalProfileChoices = await ReadFirstExistingTextAsync(LinuxSysfsPathMap.HpWmiThermalProfileChoicePaths);
 
         var ec = new LinuxEcController();
-        var hwmon = new LinuxHwMonController();
+        var hwmon = new LinuxHwMonController(OmenCoreConfig.Load().Thermal.CpuSensor);
         var cpuReading = LinuxTelemetryResolver.GetCpuTemperature(ec, hwmon);
         var gpuReading = LinuxTelemetryResolver.GetGpuTemperature(ec, hwmon);
         info.Service = await CollectServiceDiagnosticsAsync();

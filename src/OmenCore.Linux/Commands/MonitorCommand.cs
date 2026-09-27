@@ -1,5 +1,6 @@
 using System.CommandLine;
 using OmenCore.Linux.Hardware;
+using OmenCore.Linux.Config;
 
 namespace OmenCore.Linux.Commands;
 
@@ -34,7 +35,7 @@ public static class MonitorCommand
     private static async Task HandleMonitorCommandAsync(int interval)
     {
         var ec = new LinuxEcController();
-        var hwmon = new LinuxHwMonController();
+        var hwmon = new LinuxHwMonController(OmenCoreConfig.Load().Thermal.CpuSensor);
         
         Console.CursorVisible = false;
         Console.Clear();
