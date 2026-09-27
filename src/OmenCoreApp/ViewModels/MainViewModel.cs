@@ -1423,7 +1423,6 @@ namespace OmenCore.ViewModels
             _logging.SetDefaultTelemetryContext(SystemInfo.Model, SystemInfo.OsVersion);
 
             _keyboardLightingService = new KeyboardLightingService(_logging, ec, _wmiBios, _configService, _systemInfoService, _ecOperationCoordinator);
-            FanDiagnostics.AttachKeyboardLightingService(_keyboardLightingService);
             _systemOptimizationService = systemOptimizationService ?? new SystemOptimizationService(_logging);
             _gpuSwitchService = gpuSwitchService ?? new GpuSwitchService(_logging, _wmiBios);
             
