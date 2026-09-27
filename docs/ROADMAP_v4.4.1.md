@@ -203,7 +203,13 @@ key index map (our own source, not Ohman's) to place four-zone colours and per-k
   ~66-72 W max while Performance peaked at 78-80 W (~+3.5 W average, higher temps) — versus a 0.0 W
   difference before 4.4.0 enabled the fallback. Field-supported, not fully confirmed: the actual
   firmware limit values are still unread (RyzenAdj fails with `Unable to get os_access Obj`), so the
-  entry stays `UserVerified = false`.
+  entry stays `UserVerified = false`. **Update 2026-09-27:** ZenMaster read the Dragon Range PM table
+  directly (187/187 samples, ~2 h, three games). Balanced: 75/75/65 W STAPM/fast/slow in every sample.
+  Performance: the only mode that ever reached 80/80/80 W, alternating with 75/75/65 every ~20 s to a
+  few minutes, with no OmenCore writes in between and no clear temperature link (≈91 °C avg at 80 W vs
+  ≈93 °C at 65 W). The fallback demonstrably unlocks the higher limit set; the alternation is the
+  firmware's own governor, not OmenCore. Still `UserVerified = false` pending the full card (fans,
+  RGB), not for lack of power evidence.
 - The `#199` sidebar/dashboard performance-mode label mismatch — **fixed 2026-09-26.** Root cause:
   the reporter's clue was "after reboot, startup restore left disabled". `SystemControlViewModel`
   and `MainViewModel.HydrateCollections` both seeded the saved `LastPerformanceModeName` as the
